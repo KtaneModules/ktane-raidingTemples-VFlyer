@@ -23,12 +23,14 @@ public class raidingTemplesScript : MonoBehaviour
     private bool moduleSolved;
 
 	public TextMesh commonPoolText;
+	public GameObject[] buttonSets;
 	public KMSelectable[] explorerBtns;
 	public KMSelectable skullBtn;
 
 	int commonPool;
 	int[] treasures;
 	int[] hazards;
+	int nExplorers;
 	String[] explorers;
 	int[] explorerTreasure;
 	bool[] explorerInTemple;
@@ -41,10 +43,18 @@ public class raidingTemplesScript : MonoBehaviour
 	void Awake()
 	{
 		moduleId = moduleIdCounter++;
-        explorerBtns[0].OnInteract += delegate () { HandleExplorer(0); return false; };
+		explorerBtns[0].OnInteract += delegate () { HandleExplorer(0); return false; };
         explorerBtns[1].OnInteract += delegate () { HandleExplorer(1); return false; };
         explorerBtns[2].OnInteract += delegate () { HandleExplorer(2); return false; };
-        explorerBtns[3].OnInteract += delegate () { HandleExplorer(3); return false; };
+		explorerBtns[3].OnInteract += delegate () { HandleExplorer(0); return false; };
+        explorerBtns[4].OnInteract += delegate () { HandleExplorer(1); return false; };
+        explorerBtns[5].OnInteract += delegate () { HandleExplorer(2); return false; };
+        explorerBtns[6].OnInteract += delegate () { HandleExplorer(3); return false; };
+        explorerBtns[7].OnInteract += delegate () { HandleExplorer(0); return false; };
+        explorerBtns[8].OnInteract += delegate () { HandleExplorer(1); return false; };
+        explorerBtns[9].OnInteract += delegate () { HandleExplorer(2); return false; };
+        explorerBtns[10].OnInteract += delegate () { HandleExplorer(3); return false; };
+        explorerBtns[11].OnInteract += delegate () { HandleExplorer(4); return false; };
         skullBtn.OnInteract += delegate () { HandleSkull(); return false; };
 	}
 
@@ -100,6 +110,7 @@ public class raidingTemplesScript : MonoBehaviour
 
 	void Start () 
 	{
+		foreach(GameObject set in buttonSets) set.SetActive(false);
 		CalcStartCommonPool();
 		CalcExplorers();
 		CalcRounds();
@@ -116,12 +127,15 @@ public class raidingTemplesScript : MonoBehaviour
 
 	void CalcExplorers()
 	{
-		explorers = new String[4];
+		nExplorers = rnd.Next() % 3 + 3;
+		explorers = new String[nExplorers];
+
+		buttonSets[nExplorers - 3].SetActive(true);
 
 		List<String> explorerOrder = new String[] {"Indiana", "Francis", "Robert", "Clara", "Sandy", "Nate", "Allan", "Carlos", "Shelley", "Michael", "Trini"}.ToList();
 		List<Indicator> indicatorOrder = new Indicator[] {Indicator.BOB, Indicator.CAR, Indicator.CLR, Indicator.FRK, Indicator.FRQ, Indicator.IND, Indicator.MSA, Indicator.NSA, Indicator.SIG, Indicator.SND, Indicator.TRN}.ToList();
 
-		for(int i = 0; i < 4; i++)
+		for(int i = 0; i < nExplorers; i++)
 		{
 			while(indicatorOrder.Count() != 0 && !bomb.IsIndicatorPresent(indicatorOrder[0]))
 				indicatorOrder.Remove(indicatorOrder[0]);
@@ -420,9 +434,9 @@ public class raidingTemplesScript : MonoBehaviour
 	{
         Debug.LogFormat("[Raiding Temples #{0}] ===============Exploration===============", moduleId);
 
-		explorerTreasure = new int[] {0, 0, 0, 0};
-		explorerInTemple = new bool[] {true, true, true, true};
-		leaveRound = new int[] {-1, -1, -1, -1};
+		explorerTreasure = Enumerable.Repeat(0, nExplorers).ToArray();
+		explorerInTemple = Enumerable.Repeat(true, nExplorers).ToArray();
+		leaveRound = Enumerable.Repeat(-1, nExplorers).ToArray();
 		hazardHistory = new List<int>();
 
 		for(int i = 0; i < treasures.Length; i++)
@@ -559,7 +573,7 @@ public class raidingTemplesScript : MonoBehaviour
 					int explorerCount = 0;
 					for(int j = 0; j < explorerInTemple.Length; j++)
 						if(explorerInTemple[j]) explorerCount++;
-					if(explorerCount != 4)
+					if(explorerCount != nExplorers)
 						leaves.Add(i);
 					break;
 				}
@@ -678,7 +692,7 @@ public class raidingTemplesScript : MonoBehaviour
 			}
 		}
 
-		if(solution.Count() < 4)
+		if(solution.Count() < nExplorers)
 			solution.Add(-1);
 
 		Debug.LogFormat("[Raiding Temples #{0}] Button press order is [ {1}].", moduleId, GetSolution());
