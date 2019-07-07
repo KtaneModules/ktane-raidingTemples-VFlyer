@@ -443,9 +443,9 @@ public class raidingTemplesScript : MonoBehaviour
 		{
         	Debug.LogFormat("[Raiding Temples #{0}] ----------Round {1}----------", moduleId, i+1);
 		
-			if(EvalDeath(i)) break;
 			DivideTreasure(i);
 			CalcLeaves(i);
+			if(EvalDeath(i)) break;
 
 			if(!Array.Exists(explorerInTemple, x => x))
 			{
@@ -538,7 +538,7 @@ public class raidingTemplesScript : MonoBehaviour
 				{
 					if(n == 0) break;
 
-					if(hazardHistory.Exists(x => x == QUICKSAND))
+					if(hazardHistory.Exists(x => x == QUICKSAND) || hazards[n] == QUICKSAND)
 						leaves.Add(i);
 					break;
 				}
