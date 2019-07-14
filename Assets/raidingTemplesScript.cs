@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using KModkit;
+using rnd = UnityEngine.Random;
 
 public class raidingTemplesScript : MonoBehaviour 
 {
@@ -14,8 +15,6 @@ public class raidingTemplesScript : MonoBehaviour
 	readonly int ROCKS = 1;
 	readonly int SNAKES = 2;
 	readonly int QUICKSAND = 3;
-
-    static System.Random rnd = new System.Random();
 
 	//Logging
 	static int moduleIdCounter = 1;
@@ -120,14 +119,14 @@ public class raidingTemplesScript : MonoBehaviour
 	
 	void CalcStartCommonPool()
 	{
-		commonPool = rnd.Next() % 6 + rnd.Next() % 6;
+		commonPool = rnd.Range(0, 6) + rnd.Range(0, 6);
         commonPoolText.text = commonPool + "";
 		Debug.LogFormat("[Raiding Temples #{0}] Starting common pool is {1} treasure.", moduleId, commonPool);
 	}
 
 	void CalcExplorers()
 	{
-		nExplorers = rnd.Next() % 3 + 3;
+		nExplorers = rnd.Range(0, 3) + 3;
 		explorers = new String[nExplorers];
 
 		buttonSets[nExplorers - 3].SetActive(true);
