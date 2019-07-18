@@ -535,7 +535,7 @@ public class raidingTemplesScript : MonoBehaviour
 				}
 				case "Sandy":
 				{
-					if(n == 0) break;
+					if(n <= 1) break;
 
 					if(hazardHistory.Exists(x => x == QUICKSAND) || hazards[n] == QUICKSAND)
 						leaves.Add(i);
