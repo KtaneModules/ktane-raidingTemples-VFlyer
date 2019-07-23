@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using KModkit;
+using System.Text.RegularExpressions;
 using rnd = UnityEngine.Random;
 
 public class raidingTemplesScript : MonoBehaviour 
@@ -746,4 +747,126 @@ public class raidingTemplesScript : MonoBehaviour
 		
 		return (btn + 1) + "";
 	}
+
+    //twitch plays
+    private bool cmdIsValid(string param)
+    {
+        string[] parameters = param.Split(' ', ',');
+        for (int i = 1; i < parameters.Length; i++)
+        {
+            if (!parameters[i].EqualsIgnoreCase("1") && !parameters[i].EqualsIgnoreCase("2") && !parameters[i].EqualsIgnoreCase("3") && !parameters[i].EqualsIgnoreCase("4") && !parameters[i].EqualsIgnoreCase("5") && !parameters[i].EqualsIgnoreCase("skull"))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    #pragma warning disable 414
+    private readonly string TwitchHelpMessage = @"!{0} press <button> [Presses the specified button] | !{0} press <button> <button> [Example of button chaining] | !{0} reset [Resets all inputs] | Valid buttons are 1-5 being explorers in reading order and skull for the skull button";
+    #pragma warning restore 414
+
+    IEnumerator ProcessTwitchCommand(string command)
+    {
+        if (Regex.IsMatch(command, @"^\s*reset\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
+        {
+            yield return null;
+            Debug.LogFormat("[Raiding Temples #{0}] Reset of inputs triggered! (TP)", moduleId);
+            nextPress = 0;
+            pressed = new List<int>();
+            yield break;
+        }
+        string[] parameters = command.Split(' ');
+        if (Regex.IsMatch(parameters[0], @"^\s*press\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
+        {
+            if (parameters.Length > 1)
+            {
+                if (cmdIsValid(command))
+                {
+                    yield return null;
+                    if(nExplorers == 3)
+                    {
+                        for (int i = 1; i < parameters.Length; i++)
+                        {
+                            if (parameters[i].EqualsIgnoreCase("1"))
+                            {
+                                explorerBtns[0].OnInteract();
+                            }
+                            else if (parameters[i].EqualsIgnoreCase("2"))
+                            {
+                                explorerBtns[1].OnInteract();
+                            }
+                            else if (parameters[i].EqualsIgnoreCase("3"))
+                            {
+                                explorerBtns[2].OnInteract();
+                            }
+                            else if (parameters[i].EqualsIgnoreCase("skull"))
+                            {
+                                skullBtn.OnInteract();
+                            }
+                            yield return new WaitForSeconds(0.1f);
+                        }
+                    }else if (nExplorers == 4)
+                    {
+                        for (int i = 1; i < parameters.Length; i++)
+                        {
+                            if (parameters[i].EqualsIgnoreCase("1"))
+                            {
+                                explorerBtns[3].OnInteract();
+                            }
+                            else if (parameters[i].EqualsIgnoreCase("2"))
+                            {
+                                explorerBtns[4].OnInteract();
+                            }
+                            else if (parameters[i].EqualsIgnoreCase("3"))
+                            {
+                                explorerBtns[5].OnInteract();
+                            }
+                            else if (parameters[i].EqualsIgnoreCase("4"))
+                            {
+                                explorerBtns[6].OnInteract();
+                            }
+                            else if (parameters[i].EqualsIgnoreCase("skull"))
+                            {
+                                skullBtn.OnInteract();
+                            }
+                            yield return new WaitForSeconds(0.1f);
+                        }
+                    }
+                    else if (nExplorers == 5)
+                    {
+                        for (int i = 1; i < parameters.Length; i++)
+                        {
+                            if (parameters[i].EqualsIgnoreCase("1"))
+                            {
+                                explorerBtns[7].OnInteract();
+                            }
+                            else if (parameters[i].EqualsIgnoreCase("2"))
+                            {
+                                explorerBtns[8].OnInteract();
+                            }
+                            else if (parameters[i].EqualsIgnoreCase("3"))
+                            {
+                                explorerBtns[9].OnInteract();
+                            }
+                            else if (parameters[i].EqualsIgnoreCase("4"))
+                            {
+                                explorerBtns[10].OnInteract();
+                            }
+                            else if (parameters[i].EqualsIgnoreCase("5"))
+                            {
+                                explorerBtns[11].OnInteract();
+                            }
+                            else if (parameters[i].EqualsIgnoreCase("skull"))
+                            {
+                                skullBtn.OnInteract();
+                            }
+                            yield return new WaitForSeconds(0.1f);
+                        }
+                    }
+                }
+            }
+            yield break;
+        }
+    }
 }

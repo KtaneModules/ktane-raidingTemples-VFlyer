@@ -21,6 +21,6 @@ MonoBehaviour:
     https://github.com/luisdiogo98/ktane-raidingTemples\n\r\nAny problems/suggestions,
     feel free to contact me on the KTaNE Discord @TheThirdMan. Join the KTaNE Discord
     here: https://discord.gg/Fv7YEDj\r"
-  version: 1.2
+  version: 1.3
   outputFolder: build
   previewImage: {fileID: 2800000, guid: 990d2c2034e1d6240be90c6311d6724b, type: 3}
