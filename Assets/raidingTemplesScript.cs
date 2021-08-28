@@ -11,11 +11,12 @@ public class raidingTemplesScript : MonoBehaviour
 {
 	public KMBombInfo bomb;
 	public KMAudio Audio;
+	public KMBombModule modSelf;
 
-	readonly int SPIDERS = 0;
-	readonly int ROCKS = 1;
-	readonly int SNAKES = 2;
-	readonly int QUICKSAND = 3;
+	const int SPIDERS = 0;
+	const int ROCKS = 1;
+	const int SNAKES = 2;
+	const int QUICKSAND = 3;
 
 	//Logging
 	static int moduleIdCounter = 1;
@@ -27,7 +28,7 @@ public class raidingTemplesScript : MonoBehaviour
 	public KMSelectable[] explorerBtns;
 	public KMSelectable skullBtn, selfSelectable;
 
-	int commonPool;
+	int commonPool, startingCommonPool;
 	int[] treasures;
 	int[] hazards;
 	int nExplorers;
@@ -39,6 +40,9 @@ public class raidingTemplesScript : MonoBehaviour
 	List<int> solution;
 	List<int> pressed;
 	int nextPress;
+
+	IEnumerable<Vector3> rememberedArrayPositions;
+	IEnumerable<GameObject> explorersIndicatorObjects;
 
 	void Awake()
 	{
@@ -58,12 +62,25 @@ public class raidingTemplesScript : MonoBehaviour
         skullBtn.OnInteract += delegate () { HandleSkull(); return false; };
 	}
 
+	void UpdatePressedButtons()
+    {
+
+		for (var x = 0; x < explorersIndicatorObjects.Count(); x++)
+        {
+			var expectedIdx = x + 1 >= explorersIndicatorObjects.Count() ? -1 : x;
+			explorersIndicatorObjects.ElementAt(x).transform.localPosition =
+				new Vector3(rememberedArrayPositions.ElementAt(x).x,
+				pressed.Contains(expectedIdx) ? 0.01f : rememberedArrayPositions.ElementAt(x).y,
+				rememberedArrayPositions.ElementAt(x).z);
+        }
+    }
+
 	void HandleExplorer(int n)
 	{
 		GetComponent<KMAudio>().PlayGameSoundAtTransform(KMSoundOverride.SoundEffect.ButtonPress, transform);
         explorerBtns[n].AddInteractionPunch(.5f);
 
-		if(moduleSolved || pressed.Exists(x => x == n))
+		if(moduleSolved || pressed.Contains(n))
 			return;
 
 		if(solution.ElementAt(nextPress) == n)
@@ -74,17 +91,17 @@ public class raidingTemplesScript : MonoBehaviour
 			if(nextPress == solution.Count())
 			{
 				Debug.LogFormat("[Raiding Temples #{0}] Successfully pressed button \"{1}\". Module solved.", moduleId, GetButton(n));
-				moduleSolved = true;
-            	GetComponent<KMBombModule>().HandlePass();
+				SolveModule();
 			}
 			else
 				Debug.LogFormat("[Raiding Temples #{0}] Successfully pressed button \"{1}\".", moduleId, GetButton(n));
 		}
 		else
 		{
-			Debug.LogFormat("[Raiding Temples #{0}] Strike! Pressed button \"{1}\" when button \"{2}\" was expected.", moduleId, GetButton(n), GetButton(solution.ElementAt(nextPress)));
+			Debug.LogFormat("[Raiding Temples #{0}] Strike! The \"{1}\" button was pressed incorrectly when button \"{2}\" was expected.", moduleId, GetButton(n), GetButton(solution.ElementAt(nextPress)));
             GetComponent<KMBombModule>().HandleStrike();
 		}
+		UpdatePressedButtons();
 	}
 
 	void HandleSkull()
@@ -97,15 +114,26 @@ public class raidingTemplesScript : MonoBehaviour
 
 		if(solution.ElementAt(nextPress) == -1)
 		{
+			pressed.Add(-1);
 			Debug.LogFormat("[Raiding Temples #{0}] Successfully pressed button \"{1}\". Module solved.", moduleId, GetButton(-1));
-			moduleSolved = true;
-			GetComponent<KMBombModule>().HandlePass();
+			SolveModule();
 		}
 		else
 		{
-			Debug.LogFormat("[Raiding Temples #{0}] Strike! Pressed button \"{1}\" when button \"{2}\" was expected.", moduleId, GetButton(-1), GetButton(solution.ElementAt(nextPress)));
-            GetComponent<KMBombModule>().HandleStrike();
+			Debug.LogFormat("[Raiding Temples #{0}] Strike! The \"{1}\" button was incorrectly pressed when button \"{2}\" was expected.", moduleId, GetButton(-1), GetButton(solution.ElementAt(nextPress)));
+            modSelf.HandleStrike();
 		}
+		UpdatePressedButtons();
+	}
+
+	void SolveModule()
+    {
+		moduleSolved = true;
+		modSelf.HandlePass();
+		if (bomb.GetModuleIDs().Contains("SouvenirModule")) // In a case where this gets Souvenir Support.
+        {
+			commonPoolText.text = "";
+        }
 	}
 
 	void Start () 
@@ -120,9 +148,12 @@ public class raidingTemplesScript : MonoBehaviour
 	
 	void CalcStartCommonPool()
 	{
-		commonPool = rnd.Range(0, 6) + rnd.Range(0, 6);
-        commonPoolText.text = commonPool + "";
-		Debug.LogFormat("[Raiding Temples #{0}] Starting common pool is {1} treasure.", moduleId, commonPool);
+		
+		startingCommonPool = rnd.Range(0, 6) + rnd.Range(0, 6);
+		commonPoolText.text = startingCommonPool + "";
+		commonPool = startingCommonPool * 1;
+		Debug.LogFormat("[Raiding Temples #{0}] The common pool will start with {1} treasure.", moduleId, startingCommonPool);
+
 	}
 
 	void CalcExplorers()
@@ -136,12 +167,18 @@ public class raidingTemplesScript : MonoBehaviour
 			default:
 			case 3:
 				selfSelectable.Children = new[] { explorerBtns[0], null, explorerBtns[1], null, explorerBtns[2], null, null, null, null, skullBtn };
+				rememberedArrayPositions = new[] { explorerBtns[0], explorerBtns[1], explorerBtns[2], skullBtn }.Select(a => a.transform.localPosition);
+				explorersIndicatorObjects = new[] { explorerBtns[0], explorerBtns[1], explorerBtns[2], skullBtn }.Select(a => a.gameObject);
 				break;
 			case 4:
 				selfSelectable.Children = new[] { explorerBtns[3], explorerBtns[4], null, explorerBtns[5], explorerBtns[6], null, null, null, null, skullBtn };
+				rememberedArrayPositions = new[] { explorerBtns[3], explorerBtns[4], explorerBtns[5], explorerBtns[6], skullBtn }.Select(a => a.transform.localPosition);
+				explorersIndicatorObjects = new[] { explorerBtns[3], explorerBtns[4], explorerBtns[5], explorerBtns[6], skullBtn }.Select(a => a.gameObject);
 				break;
 			case 5:
 				selfSelectable.Children = new[] { explorerBtns[7], explorerBtns[8], explorerBtns[9], explorerBtns[10], explorerBtns[11], null, null, null, null, skullBtn };
+				rememberedArrayPositions = new[] { explorerBtns[7], explorerBtns[8], explorerBtns[9], explorerBtns[10], explorerBtns[11], skullBtn }.Select(a => a.transform.localPosition);
+				explorersIndicatorObjects = new[] { explorerBtns[7], explorerBtns[8], explorerBtns[9], explorerBtns[10], explorerBtns[11], skullBtn }.Select(a => a.gameObject);
 				break;
 		}
 		selfSelectable.UpdateChildren();
@@ -464,7 +501,7 @@ public class raidingTemplesScript : MonoBehaviour
 
 			if (!explorerInTemple.Any(x => x))
 			{
-        		Debug.LogFormat("[Raiding Temples #{0}] No explorers remain on the temple.", moduleId);
+        		Debug.LogFormat("[Raiding Temples #{0}] No explorers remain in the temple. Rounds will not continue.", moduleId);
 				return;
 			}
 		}
@@ -481,12 +518,18 @@ public class raidingTemplesScript : MonoBehaviour
 					explorerTreasure[i] = -1;
 				}
 			}
-
-        	Debug.LogFormat("[Raiding Temples #{0}] Second occurence of {1}. Explorers [ {2}] died.", moduleId, GetHazardName(hazards[n]), GetDeadExplorers());
+			if (explorerTreasure.Any(a => a == -1))
+			{
+				Debug.LogFormat("[Raiding Temples #{0}] The hazard was {1} which is a repeated hazard. Explorers [ {2}] died.", moduleId, GetHazardName(hazards[n]), GetDeadExplorers());
+			}
+			else
+            {
+				Debug.LogFormat("[Raiding Temples #{0}] The hazard was {1} which is a repeated hazard. Every explorer has already left the temple at this point.", moduleId, GetHazardName(hazards[n]));
+			}
 			return true;
 		}
 
-        Debug.LogFormat("[Raiding Temples #{0}] {1} caused no deaths.", moduleId, GetHazardName(hazards[n]));
+        Debug.LogFormat("[Raiding Temples #{0}] The hazard was {1}, which caused no deaths.", moduleId, GetHazardName(hazards[n]));
 		hazardHistory.Add(hazards[n]);
 		return false;
 	}
@@ -503,14 +546,14 @@ public class raidingTemplesScript : MonoBehaviour
 		for(int i = 0; i < explorerTreasure.Length; i++)
 			if(explorerInTemple[i]) explorerTreasure[i] += share;
 
-        Debug.LogFormat("[Raiding Temples #{0}] {1} treasure divided by {2} explorer(s). Each explorer got {3} treasure. Common pool is now {4}.", moduleId, treasures[n], explorerCount, share, commonPool);
+        Debug.LogFormat("[Raiding Temples #{0}] A total {1} treasure will be divided to {2} explorer{5} remaining in the temple. Each explorer should get {3} treasure. The common pool after distributing the treasure should be {4}.", moduleId, treasures[n], explorerCount, share, commonPool, explorerCount == 1 ? "" : "s");
 	}
 
 	void CalcLeaves(int n)
 	{
 		List<int> leaves = new List<int>();
 		int shelley = -1;
-
+		List<string> reasons = new List<string>();
 		for(int i = 0; i < explorerInTemple.Length; i++)
 		{
 			if(!explorerInTemple[i]) continue;
@@ -519,7 +562,11 @@ public class raidingTemplesScript : MonoBehaviour
 			{
 				case "Indiana":
 				{
-					if(hazards[n] == SNAKES) leaves.Add(i);
+						if (hazards[n] == SNAKES)
+						{
+							leaves.Add(i);
+							reasons.Add("Snakes are present in the current round.");
+						}
 					break;
 				}
 				case "Francis":
@@ -533,40 +580,58 @@ public class raidingTemplesScript : MonoBehaviour
 					for(int j = 0; j < explorerTreasure.Length; j++)
 						if(explorerTreasure[j] > maxTreasure && i != j) maxTreasure = explorerTreasure[j];
 
-					if(explorerTreasure[i] + commonPool > maxTreasure)
-						leaves.Add(i);
+						if (explorerTreasure[i] + commonPool > maxTreasure)
+						{
+							leaves.Add(i);
+							reasons.Add("This explorer is guarenteed to have the most amount of treasure.");
+						}
 					break;
 				}
 				case "Robert":
 				{
-					if(explorerTreasure[i] != 0)
-						leaves.Add(i);
+						if (explorerTreasure[i] != 0)
+						{
+							leaves.Add(i);
+							reasons.Add("This explorer has some treasure.");
+						}
 					break;
 				}
 				case "Clara":
 				{
-					if(n == 1)
-						leaves.Add(i);
+						if (n == 1)
+						{
+							leaves.Add(i);
+							reasons.Add("This is the second round for this explorer.");
+						}
 					break;
 				}
 				case "Sandy":
 				{
 					if(n <= 1) break;
 
-					if(hazardHistory.Exists(x => x == QUICKSAND) || hazards[n] == QUICKSAND)
-						leaves.Add(i);
+						if (hazardHistory.Exists(x => x == QUICKSAND) || hazards[n] == QUICKSAND)
+						{
+							leaves.Add(i);
+							reasons.Add("Quicksand is present in this round, and it has been more than 2 rounds.");
+						}
 					break;
 				}
 				case "Nate":
 				{
-					if(explorerTreasure[i] + commonPool >= 10)
-						leaves.Add(i);
+						if (explorerTreasure[i] + commonPool >= 10)
+						{
+							leaves.Add(i);
+							reasons.Add("This explorer's current treasure when added to the common pool is at least 10.");
+						}
 					break;
 				}
 				case "Allan":
 				{
-					if(n + 1 >= 2 * commonPool)
-						leaves.Add(i);
+						if (n + 1 >= 2 * commonPool)
+						{
+							leaves.Add(i);
+							reasons.Add("The number of rounds is at least twice as many treasure in the common pool.");
+						}
 					break;
 				}
 				case "Carlos":
@@ -574,9 +639,12 @@ public class raidingTemplesScript : MonoBehaviour
 					int explorerCount = 0;
 					for(int j = 0; j < explorerInTemple.Length; j++)
 						if(explorerInTemple[j]) explorerCount++;
-					if(explorerTreasure[i] + (commonPool / explorerCount) >= 7)
-						leaves.Add(i);
-					break;
+						if (explorerTreasure[i] + (commonPool / explorerCount) >= 7)
+						{
+							leaves.Add(i);
+							reasons.Add("This explorer is leaving with at least 7 treasure,");
+						}
+						break;
 				}
 				case "Shelley":
 				{
@@ -588,14 +656,20 @@ public class raidingTemplesScript : MonoBehaviour
 					int explorerCount = 0;
 					for(int j = 0; j < explorerInTemple.Length; j++)
 						if(explorerInTemple[j]) explorerCount++;
-					if(explorerCount != nExplorers)
-						leaves.Add(i);
+						if (explorerCount != nExplorers)
+						{
+							leaves.Add(i);
+							reasons.Add("It has been 1 round since another explorer left.");
+						}
 					break;
 				}
 				case "Trini":
 				{
-					if(commonPool >= 5)
-						leaves.Add(i);
+						if (commonPool >= 5)
+						{
+							leaves.Add(i);
+							reasons.Add("The common pool has reached 5 treasure.");
+						}
 					break;
 				}
 				default:
@@ -606,13 +680,18 @@ public class raidingTemplesScript : MonoBehaviour
 			}
 		}
 
-		if(shelley != -1 && leaves.Count() != 0)
+		if (shelley != -1 && leaves.Any())
+		{
 			leaves.Add(shelley);
-
+			if (shelley < reasons.Count)
+				reasons.Insert(shelley, "Another explorer is leaving.");
+			else
+				reasons.Add("Another explorer is leaving.");
+		}
 		foreach(int expl in leaves)
 			explorerInTemple[expl] = false;
 
-		if(leaves.Count() == 0)
+		if(!leaves.Any())
 		{
         	Debug.LogFormat("[Raiding Temples #{0}] No explorers leave the temple.", moduleId);
 			return;
@@ -621,16 +700,18 @@ public class raidingTemplesScript : MonoBehaviour
 		int share = commonPool / leaves.Count();
 		commonPool = commonPool % leaves.Count();
 
-		foreach(int expl in leaves)
+        for (int i = 0; i < leaves.Count; i++)
 		{
-			explorerInTemple[expl] = false;
+            int expl = leaves[i];
+            explorerInTemple[expl] = false;
 			explorerTreasure[expl] += share;
 			leaveRound[expl] = n;
 
-			Debug.LogFormat("[Raiding Temples #{0}] Explorer #{1} ({2}) leaves with {3} treasure.", moduleId, expl + 1, explorers[expl], explorerTreasure[expl]);
+			Debug.LogFormat("[Raiding Temples #{0}] Explorer #{1} ({2}) leaves with {3} treasure with the following reason: {4}",
+				moduleId, expl + 1, explorers[expl], explorerTreasure[expl], reasons[i]);
 		}
 		
-		Debug.LogFormat("[Raiding Temples #{0}] Common pool is now {1}.", moduleId, commonPool);
+		Debug.LogFormat("[Raiding Temples #{0}] The common pool after the specified explorers leaving should be {1}.", moduleId, commonPool);
 	}
 
 	void CalcButtonPresses()
@@ -760,7 +841,7 @@ public class raidingTemplesScript : MonoBehaviour
 		if(btn == -1)
 			return "Skull";
 		
-		return "Explorer" + (btn + 1);
+		return "Explorer " + (btn + 1);
 	}
 
     //twitch plays
@@ -788,7 +869,9 @@ public class raidingTemplesScript : MonoBehaviour
             yield return null;
             Debug.LogFormat("[Raiding Temples #{0}] Reset of inputs triggered! (TP)", moduleId);
             nextPress = 0;
-            pressed = new List<int>();
+			if (pressed != null)
+				pressed.Clear();
+			UpdatePressedButtons();
             yield break;
         }
         string[] parameters = command.Split(' ');
