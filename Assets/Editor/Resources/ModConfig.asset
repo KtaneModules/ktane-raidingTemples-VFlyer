@@ -22,6 +22,6 @@ MonoBehaviour:
     PDF: https://ktane.timwi.de/PDF/Raiding%20Temples.pdf\r\n\r\nGitHub Repository
     (Old Version): https://github.com/luisdiogo98/ktane-raidingTemples\nGitHub Repository
     (Reupload): https://github.com/VFlyer/ktane-raidingTemples\n\r"
-  version: 1.3
+  version: 1.3.01
   outputFolder: build
   previewImage: {fileID: 2800000, guid: 990d2c2034e1d6240be90c6311d6724b, type: 3}

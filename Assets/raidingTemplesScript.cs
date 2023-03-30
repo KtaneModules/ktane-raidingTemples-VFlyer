@@ -683,10 +683,7 @@ public class raidingTemplesScript : MonoBehaviour
 		if (shelley != -1 && leaves.Any())
 		{
 			leaves.Add(shelley);
-			if (shelley < reasons.Count)
-				reasons.Insert(shelley, "Another explorer is leaving.");
-			else
-				reasons.Add("Another explorer is leaving.");
+			reasons.Add("Another explorer is leaving.");
 		}
 		foreach(int expl in leaves)
 			explorerInTemple[expl] = false;
